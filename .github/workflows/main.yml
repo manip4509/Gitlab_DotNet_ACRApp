@@ -23,7 +23,7 @@ jobs:
         password: ${{ secrets.REGISTRY_PASSWORD }}
     
     - run: |
-        docker build . -t acrsampleregistry.azurecr.io/dotnetcontainerapp:${{ github.sha }}
+        docker build ./MvcApp/ --file ./MvcApp/Dockerfile -t acrsampleregistry.azurecr.io/dotnetcontainerapp:${{ github.sha }}
         docker push acrsampleregistry.azurecr.io/dotnetcontainerapp:${{ github.sha }} 
   deploy:
       runs-on: ubuntu-latest
