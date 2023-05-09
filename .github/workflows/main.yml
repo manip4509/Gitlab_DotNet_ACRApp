@@ -1,0 +1,55 @@
+on: workflow_dispatch
+
+name: Dotnet_Containerapp_Deployment
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    # checkout the repo
+    - name: 'Checkout Github Action' 
+      uses: actions/checkout@master
+    
+    - name: 'Login via Azure CLI'
+      uses: Azure/login@v1
+      with:
+       creds: '{"clientId":"${{ secrets.CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.TENANT_ID }}"}'
+
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: acrsampleregistry.azurecr.io
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+    
+    - run: |
+        docker build . -t acrsampleregistry.azurecr.io/dotnetcontainerapp:${{ github.sha }}
+        docker push acrsampleregistry.azurecr.io/dotnetcontainerapp:${{ github.sha }} 
+  deploy:
+      runs-on: windows-latest
+      needs: build
+      
+      steps:
+      - name: 'Login via Azure CLI'
+        uses: Azure/login@v1
+        with:
+         creds: '{"clientId":"${{ secrets.CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.TENANT_ID }}"}'
+    
+       
+      - name: 'Deploy Container App'
+        uses: Azure/cli@v1
+        with:
+         inlineScript: |
+          echo "Installing containerapp extension"
+          az extension add -n containerapp
+          
+          az containerapp create \
+                --name dotnetcontainerapp \
+                --resource-group cicd_templates \
+                --environment container-env \
+                --image acrsampleregistry.azurecr.io/dotnetcontainerapp:${{ github.sha }} \
+                --registry-server acrsampleregistry.azurecr.io \
+                --registry-username ${{ secrets.REGISTRY_USERNAME }} \
+                --registry-password ${{ secrets.REGISTRY_PASSWORD }}\
+                --target-port 80 \
+                --ingress 'external'
