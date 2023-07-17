@@ -9,7 +9,7 @@ build:
   stage: build
   script:
     - docker login -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD" "$REGISTRY_SERVERNAME"
-    - docker build ./MvcApp/Dockerfile -t $REGISTRY_SERVERNAME/dotnetsampleapp:$CI_COMMIT_SHA .
+    - docker build -t $REGISTRY_SERVERNAME/dotnetsampleapp:$CI_COMMIT_SHA .
     #- docker build ./MvcApp/ --file ./MvcApp/Dockerfile -t acrsampleregistry.azurecr.io/dotnetcontainerapp:${{ github.sha }} 
     - docker push $REGISTRY_SERVERNAME/dotnetsampleapp:$CI_COMMIT_SHA
 
